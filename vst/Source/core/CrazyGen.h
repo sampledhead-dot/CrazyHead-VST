@@ -2,6 +2,9 @@
 // regen, pinApply, dice, cycleMut, detección de golpes y troceado. Cualquier cambio aquí exige el mismo cambio en la
 // app web y pasar tests/parity.js.
 #pragma once
+#ifndef CH_PI
+#define CH_PI 3.14159265358979323846
+#endif
 #include <cmath>
 #include <cstdint>
 #include <vector>
@@ -185,7 +188,7 @@ inline std::vector<double> detectOnsets (const float* L, const float* R, size_t 
     const size_t hop = std::max<size_t> (64, (size_t) jsRound (sr * .003)), nf = n / hop;
     if (nf < 8) return out;
     std::vector<float> eL (nf), eH (nf), flux (nf, 0.0f);
-    double lp = 0; const double a = 1 - std::exp (-2 * M_PI * 250 / sr);
+    double lp = 0; const double a = 1 - std::exp (-2 * CH_PI * 250 / sr);
     for (size_t f = 0; f < nf; ++f)
     {
         double sl = 0, sh = 0;

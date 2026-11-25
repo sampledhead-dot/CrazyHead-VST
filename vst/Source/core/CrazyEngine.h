@@ -324,7 +324,7 @@ private:
     void setBiquad (double f, double qdb, bool hp)
     {
         f = clampd (f, 20, std::min (22000.0, sr * .45));
-        const double w = 2 * M_PI * f / sr, cw = std::cos (w), sw = std::sin (w), Q = std::pow (10.0, qdb / 20.0), al = sw / (2 * Q);
+        const double w = 2 * CH_PI * f / sr, cw = std::cos (w), sw = std::sin (w), Q = std::pow (10.0, qdb / 20.0), al = sw / (2 * Q);
         double bb0, bb1, bb2;
         if (! hp) { bb0 = (1 - cw) / 2; bb1 = 1 - cw; bb2 = bb0; } else { bb0 = (1 + cw) / 2; bb1 = -(1 + cw); bb2 = bb0; }
         const double a0 = 1 + al;
@@ -394,7 +394,7 @@ private:
                 }
                 wl += o[0] + o[2] * .7; wr += o[1] + o[3] * .7;
             }
-            const double gl = std::min (1.0, std::sqrt (2.0) * std::cos ((pn + 1) * M_PI / 4)), grr = std::min (1.0, std::sqrt (2.0) * std::sin ((pn + 1) * M_PI / 4));
+            const double gl = std::min (1.0, std::sqrt (2.0) * std::cos ((pn + 1) * CH_PI / 4)), grr = std::min (1.0, std::sqrt (2.0) * std::sin ((pn + 1) * CH_PI / 4));
             double ol = (yl * gl + wl) * vol, orr = (yr * grr + wr) * vol;
             oL[i] += (float) soft (ol); oR[i] += (float) soft (orr);
         }
