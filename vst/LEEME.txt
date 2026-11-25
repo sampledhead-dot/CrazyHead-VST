@@ -1,0 +1,54 @@
+CrazyHead — instrumento VST3 / AU / Standalone · By Sampled Head
+================================================================
+
+INSTALAR
+- Windows: copia la carpeta  VST3/CrazyHead.vst3  a
+      C:\Program Files\Common Files\VST3\
+  La app independiente (sin DAW) es  Standalone/CrazyHead.exe
+  Si Windows avisa («Windows protegió su PC»): Más información → Ejecutar de todas formas.
+- Mac: copia  VST3/CrazyHead.vst3  a  /Library/Audio/Plug-Ins/VST3/
+       y  AU/CrazyHead.component  a  /Library/Audio/Plug-Ins/Components/
+  La app independiente es  Standalone/CrazyHead.app
+  Funciona en Intel y Apple Silicon, desde macOS 10.13 (también en Monterey).
+  Si macOS dice que está dañado o no se abre, en Terminal:
+      xattr -cr "/Library/Audio/Plug-Ins/VST3/CrazyHead.vst3"
+      xattr -cr "/Library/Audio/Plug-Ins/Components/CrazyHead.component"
+Abre de nuevo el DAW para que lo detecte.
+
+QUÉ ES
+Es CrazyHead (la app) en versión básica y de una sola pista: cargas un loop, lo troceas, y el plugin toca un patrón
+al azar con esos trozos, siguiendo el tempo y el compás de tu proyecto. Es un INSTRUMENTO: ponlo en una pista MIDI
+(o de instrumento) y dale al play del DAW. Los efectos de GlitchHead no van aquí (tiene su propio plugin).
+
+USAR
+1. «Cargar audio» (o suelta un archivo en la ventana). Máximo 60 s; WAV, AIFF, FLAC, MP3 u OGG.
+2. Región: en la franja de arriba, arrastra los bordes (o el cuerpo) para elegir qué parte del audio se usa.
+3. Trozos: «Trocear» los saca de los golpes (Sensibilidad ajusta cuántos); «4 / 8 / 16» los reparte a partes iguales.
+   En la vista grande: arrastra una línea para moverla, doble clic abajo para añadir, clic derecho en una línea para quitarla.
+   Clic en el número de arriba = oír ese trozo y elegirlo; Mayús+clic = silenciarlo para el generador.
+4. «Loop comp.» = cuántos compases dura el loop original. Con «Seguir tempo» el loop se adapta al tempo del proyecto
+   (cambia también el tono, como en la app).
+5. Patrón: «Regenerar» crea uno nuevo al azar; «Dado» cambia solo algunos pasos. Mandos de GENERADOR: densidad,
+   síncopa, fidelidad al orden original, trinados, doble golpe, reverse, pitch, humanize, mutación en cada vuelta…
+6. GOLPES FIJOS: elige un trozo (clic en su número) y toca el paso donde quieres que suene siempre (p. ej. el bombo en
+   el 1 y la caja en el 2 y el 4). Clic derecho = quitar. «Prob. fijos» < 100 los hace sonar solo a veces.
+7. EFECTOS: filtro, bitcrush, drive, delay y reverb. EFECTOS ALEATORIOS: cambian solos con el patrón (filtro, delay,
+   reverb, bit, drive, pan y stutter); «Por trozo» hace que cada trozo siempre reciba el mismo efecto.
+8. MIDI: las notas C1 (36) a D#2 (51) tocan los trozos 1 a 16, como el modo Slice del Simpler. Así puedes grabar tu
+   propia interpretación en el DAW.
+El audio y los ajustes se guardan dentro del proyecto del DAW.
+
+SIN DAW (app independiente): no hay transporte; usa Play/Stop y el mando de tempo del plugin.
+
+LÍMITES
+- Una sola pista. Sin compresor ni delay dub (los tiene la app).
+- El reverb es de otro tipo que el de la app (red de retardos en vez de convolución): suena parecido, no igual.
+- El plugin no escribe notas MIDI en la pista del DAW (los instrumentos no pueden hacerlo en la mayoría de DAWs).
+
+PROBLEMAS
+Si algo falla, anota el DAW, el sistema y qué estabas haciendo, y avísanos.
+
+ACTUALIZACIONES
+Al abrir la ventana, como mucho una vez al día, se comprueba en GitHub si hay una versión nueva.
+Si la hay, aparece abajo una franja «Nueva versión… · Descargar». Descarga el zip y sustituye el .vst3 con el DAW cerrado.
+Con «✕» no vuelve a avisar de esa versión. Sin internet no aparece nada y el plugin funciona igual.
