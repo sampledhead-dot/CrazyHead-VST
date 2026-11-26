@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(CrazyHead VERSION 1.0.0 LANGUAGES C CXX)
+project(CrazyHead VERSION 1.0.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "macOS mínimo")
@@ -44,7 +44,9 @@ target_compile_definitions(CrazyHead PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_DISPLAY_SPLASH_SCREEN=0)
+    JUCE_DISPLAY_SPLASH_SCREEN=0
+    JUCE_USE_MP3AUDIOFORMAT=1            # MP3 también en Windows (en Mac ya lo lee CoreAudio)
+    JUCE_USE_WINDOWS_MEDIA_FORMAT=1)
 
 target_link_libraries(CrazyHead
     PRIVATE juce::juce_audio_utils juce::juce_audio_formats juce::juce_dsp
@@ -55,6 +57,6 @@ option(CRAZYHEAD_BUILD_TESTS "Compilar la app de pruebas" OFF)
 if(CRAZYHEAD_BUILD_TESTS)
     juce_add_console_app(CrazyHeadTests PRODUCT_NAME "CrazyHeadTests")
     target_sources(CrazyHeadTests PRIVATE tests/TestMain.cpp Source/PluginProcessor.cpp Source/PluginEditor.cpp)
-    target_compile_definitions(CrazyHeadTests PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_STANDALONE_APPLICATION=1)
+    target_compile_definitions(CrazyHeadTests PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_STANDALONE_APPLICATION=1 JUCE_USE_MP3AUDIOFORMAT=1)
     target_link_libraries(CrazyHeadTests PRIVATE juce::juce_audio_utils juce::juce_audio_formats juce::juce_dsp juce::juce_recommended_config_flags)
 endif()

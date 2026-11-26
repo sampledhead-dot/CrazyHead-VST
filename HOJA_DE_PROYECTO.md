@@ -1,6 +1,6 @@
 # CrazyHead VST — Hoja de proyecto
 
-Familia de apps de **Sampled Head**. **Versión actual:** 1.0.0 (25-11-2026) · **Repositorio:** https://github.com/sampledhead-dot/CrazyHead-VST
+Familia de apps de **Sampled Head**. **Versión actual:** 1.0.1 (26-11-2026) · **Repositorio:** https://github.com/sampledhead-dot/CrazyHead-VST
 
 ## Descripción
 Versión plugin (instrumento VST3 / AU / Standalone, JUCE 9.0.5) de **CrazyHead**, en versión básica y de **una sola pista**:
@@ -44,6 +44,12 @@ no liberarlos en el hilo de audio).
 - Registro: portal SH-apps (`app.js` → `vst` en la tarjeta de CrazyHead) y plataforma (`desktop/apps.json` → `plugins`).
 
 ## Historial
+- **1.0.1** (26-11-2026): arreglo de la carga de audio (aviso del usuario en Ableton Live 12 / Windows: no cargaba ni desde el
+  buscador ni arrastrando). El mensaje de error se borraba a los 33 ms (el temporizador repintaba el nombre vacío), así que el
+  fallo era invisible; ahora el motivo se queda a la vista (formato no admitido, archivo inexistente, error de lectura…) y se
+  guarda un informe en Documentos/SampledHead/informes (botón «Informe (.txt)»). MP3 también en Windows
+  (`JUCE_USE_MP3AUDIOFORMAT`, antes solo en Mac por CoreAudio) y WMA. Se acepta soltar la ruta como texto o URL `file://`
+  (algunos DAW la envían así). Marco amarillo «Suelta el audio aquí» al arrastrar encima. Pruebas nuevas de carga.
 - **1.0.0** (25-11-2026): primera versión. Instrumento VST3/AU/Standalone de una pista; generador con paridad exacta con la app;
   región, troceado automático/rejilla/manual, golpes fijos (con probabilidad), mutación, humanize, swing; efectos aleatorios; MIDI; aviso de versión.
 

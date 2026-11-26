@@ -280,7 +280,9 @@ CrazyHeadEditor::CrazyHeadEditor (CrazyHeadProcessor& p)
     setSize (980, 850);
     auto addC = [this] (juce::Component* c) { addAndMakeVisible (c); };
     for (auto* c : { (juce::Component*) &overview, (juce::Component*) &chopView, (juce::Component*) &pattern }) addC (c);
-    for (auto* b : { &loadBtn, &autoBtn, &g4, &g8, &g16, &regenBtn, &diceBtn, &clearPins, &playBtn }) addC (b);
+    for (auto* b : { &loadBtn, &autoBtn, &g4, &g8, &g16, &regenBtn, &diceBtn, &clearPins, &playBtn, &reportBtn }) addC (b);
+    reportBtn.onClick = [this] { const auto f = writeReport (U ("bot\xc3\xb3n Informe"), errorMsg.isNotEmpty() ? errorMsg : juce::String ("sin errores")); if (f != juce::File()) f.revealToUser(); };
+    reportBtn.setTooltip (U ("Guarda un informe .txt en Documentos/SampledHead/informes"));
     pattern.selectedChop = [this] { return chopView.selected; };
     loadBtn.onClick = [this] { chooseFile(); };
     autoBtn.onClick = [this] { proc.autoChopNow(); };
@@ -321,29 +323,79 @@ CrazyHeadEditor::~CrazyHeadEditor() { setLookAndFeel (nullptr); }
 
 void CrazyHeadEditor::chooseFile()
 {
-    chooser = std::make_unique<juce::FileChooser> (U ("Elige un audio (m\xc3\xa1x. 60 s)"), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.mp3;*.ogg");
-    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this] (const juce::FileChooser& fc)
+    chooser = std::make_unique<juce::FileChooser> (U ("Elige un audio (m\xc3\xa1x. 60 s)"), juce::File(), "*.wav;*.wave;*.aif;*.aiff;*.flac;*.mp3;*.ogg;*.m4a;*.wma");
+    juce::Component::SafePointer<CrazyHeadEditor> safe (this);
+    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc)
     {
+        if (safe == nullptr) return;
         const auto f = fc.getResult(); if (f == juce::File()) return;
-        filesDropped ({ f.getFullPathName() }, 0, 0);
+        safe->loadPath (f.getFullPathName(), "buscador");
     });
 }
 void CrazyHeadEditor::filesDropped (const juce::StringArray& files, int, int)
 {
-    if (files.isEmpty()) return;
-    if (! proc.loadFile (juce::File (files[0]))) { fileLbl.setText (U ("No se pudo leer ese archivo"), juce::dontSendNotification); return; }
-    // compases del loop: el n\xc3\xbamero de compases que deja el tempo entre 70 y 170
+    dragOver = false; repaint();
+    if (files.isEmpty()) { errorMsg = U ("No ha llegado ning\xc3\xban archivo al soltar"); writeReport ("arrastrar", errorMsg); return; }
+    loadPath (files[0], "arrastrar archivo");
+}
+void CrazyHeadEditor::textDropped (const juce::String& text, int, int)
+{
+    dragOver = false; repaint();
+    auto t = text.trim().upToFirstOccurrenceOf ("\n", false, false).trim().unquoted();
+    if (t.startsWithIgnoreCase ("file:")) t = juce::URL (t).getLocalFile().getFullPathName();
+    loadPath (t, "arrastrar texto");
+}
+void CrazyHeadEditor::loadPath (const juce::String& path, const juce::String& via)
+{
+    const juce::File f (path);
+    if (! juce::File::isAbsolutePath (path) || ! proc.loadFile (f))
+    {
+        errorMsg = proc.lastError.isNotEmpty() ? proc.lastError : U ("No se pudo leer ese archivo");
+        const auto rep = writeReport (via, errorMsg + " | " + path);
+        if (rep != juce::File()) errorMsg << U (" \xc2\xb7 informe en Documentos/SampledHead/informes");
+        repaint(); return;
+    }
+    errorMsg.clear();
+    // compases del loop: el n\xc3\xbamero de compases que deja el tempo m\xc3\xa1s cerca de 110
     const double d = proc.regionEnd() - proc.regionStart(); int best = 2; double bd = 1e9;
     for (int b : { 1, 2, 4, 8 }) { const double bpm = b * 4 * 60.0 / d, e = std::fabs (std::log (bpm / 110.0)); if (e < bd) { bd = e; best = b; } }
     if (auto* prm = st.getParameter ("bars")) prm->setValueNotifyingHost (prm->convertTo0to1 ((float) best));
     chopView.selected = 0; lastVer = -1; sync();
+}
+juce::File CrazyHeadEditor::writeReport (const juce::String& where, const juce::String& what)
+{
+    auto dir = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("SampledHead").getChildFile ("informes");
+    if (! dir.createDirectory()) return {};
+    auto f = dir.getChildFile ("CrazyHead-VST-informe-" + juce::Time::getCurrentTime().formatted ("%Y%m%d-%H%M%S") + ".txt");
+    juce::String s;
+    s << "CrazyHead VST " << CrazyHeadProcessor::kVersion << "\n"
+      << "Fecha: " << juce::Time::getCurrentTime().toISO8601 (true) << "\n"
+      << U ("D\xc3\xb3nde: ") << where << "\n"
+      << "Mensaje: " << what << "\n"
+      << "DAW: " << juce::PluginHostType().getHostDescription() << U (" \xc2\xb7 formato: ") << juce::AudioProcessor::getWrapperTypeDescription (proc.wrapperType) << "\n"
+      << "Sistema: " << juce::SystemStats::getOperatingSystemName() << (juce::SystemStats::isOperatingSystem64Bit() ? " 64 bits" : "") << U (" \xc2\xb7 CPU: ") << juce::SystemStats::getNumCpus()
+      << U (" n\xc3\xba" "cleos \xc2\xb7 RAM: ") << juce::SystemStats::getMemorySizeInMegabytes() << " MB\n"
+      << "Frecuencia: " << proc.getSampleRate() << U (" Hz \xc2\xb7 bloque: ") << proc.getBlockSize() << "\n"
+      << "Formatos que sabe leer: " << proc.formatList() << "\n"
+      << "Audio cargado: " << (proc.hasAudio() ? proc.sourceName + " (" + juce::String (proc.sourceDuration(), 2) + " s)" : juce::String ("ninguno")) << "\n";
+    return f.replaceWithText (s) ? f : juce::File();
+}
+void CrazyHeadEditor::paintOverChildren (juce::Graphics& g)
+{
+    if (! dragOver) return;
+    g.setColour (col::accent.withAlpha (.12f)); g.fillRect (getLocalBounds());
+    g.setColour (col::accent); g.drawRect (getLocalBounds(), 4);
+    g.setFont (juce::FontOptions (22.0f, juce::Font::bold));
+    g.drawText (U ("Suelta el audio aqu\xc3\xad"), getLocalBounds(), juce::Justification::centred, false);
 }
 
 void CrazyHeadEditor::sync()
 {
     const int v = proc.loopVersion.load();
     if (v != lastVer) { lastVer = v; overview.refresh(); chopView.refresh(); pattern.repaint(); }
-    fileLbl.setText (proc.hasAudio() ? proc.sourceName : juce::String(), juce::dontSendNotification);
+    fileLbl.setColour (juce::Label::textColourId, errorMsg.isNotEmpty() ? col::pink : col::text);
+    fileLbl.setTooltip (errorMsg);
+    fileLbl.setText (errorMsg.isNotEmpty() ? errorMsg : proc.hasAudio() ? proc.sourceName : U ("Arrastra un audio o pulsa Cargar"), juce::dontSendNotification);
     if (proc.hasAudio())
     {
         const double d = proc.regionEnd() - proc.regionStart();
@@ -403,7 +455,7 @@ void CrazyHeadEditor::resized()
     auto sec = [this] (int x, int y, int w, int h, const juce::String& t) { secRects.push_back ({ x, y, w, h }); secNames.push_back (t); };
     const int W = getWidth();
     syncLbl.setBounds (W - 316, 12, 300, 18); syncLbl.setJustificationType (juce::Justification::centredRight);
-    playBtn.setBounds (W - 96, 32, 80, 26);
+    playBtn.setBounds (W - 96, 32, 80, 26); reportBtn.setBounds (W - 210, 32, 108, 26);
     // fila de audio
     loadBtn.setBounds (16, 62, 120, 30); fileLbl.setBounds (142, 62, 200, 30);
     autoBtn.setBounds (346, 62, 80, 30); sensLbl.setBounds (432, 62, 84, 30); sensSl.setBounds (516, 62, 110, 30);

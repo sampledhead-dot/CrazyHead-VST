@@ -88,7 +88,7 @@ private:
     CrazyHeadProcessor& proc;
 };
 
-class CrazyHeadEditor : public juce::AudioProcessorEditor, private juce::Timer, public juce::FileDragAndDropTarget
+class CrazyHeadEditor : public juce::AudioProcessorEditor, private juce::Timer, public juce::FileDragAndDropTarget, public juce::TextDragAndDropTarget
 {
 public:
     explicit CrazyHeadEditor (CrazyHeadProcessor&);
@@ -97,6 +97,16 @@ public:
     void resized() override;
     bool isInterestedInFileDrag (const juce::StringArray&) override { return true; }
     void filesDropped (const juce::StringArray&, int, int) override;
+    void fileDragEnter (const juce::StringArray&, int, int) override { dragOver = true; repaint(); }
+    void fileDragExit (const juce::StringArray&) override { dragOver = false; repaint(); }
+    // Algunos DAW (y navegadores de archivos) sueltan la ruta como texto o como URL file://
+    bool isInterestedInTextDrag (const juce::String& t) override { return t.trim().isNotEmpty(); }
+    void textDragEnter (const juce::String&, int, int) override { dragOver = true; repaint(); }
+    void textDragExit (const juce::String&) override { dragOver = false; repaint(); }
+    void textDropped (const juce::String&, int, int) override;
+    void paintOverChildren (juce::Graphics&) override;
+    juce::String loadMessage() const { return errorMsg; }   // para las pruebas
+    juce::File writeReport (const juce::String& where, const juce::String& what);
     shupdate::UpdateBanner& banner() { return updateBanner; }
 
 private:
@@ -115,5 +125,7 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
     shupdate::UpdateBanner updateBanner;
     int lastVer = -1, lastStep = -2, lastChopCount = -1;
+    bool dragOver = false; juce::String errorMsg; juce::TextButton reportBtn { "Informe (.txt)" };
+    void loadPath (const juce::String& path, const juce::String& via);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CrazyHeadEditor)
 };

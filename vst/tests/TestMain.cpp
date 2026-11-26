@@ -92,6 +92,38 @@ int main()
         juce::FileOutputStream fo (out); if (fo.openedOk()) { fo.setPosition (0); fo.truncate(); juce::PNGImageFormat().writeImageToStream (img, fo); }
         CHECK (out.existsAsFile() && out.getSize() > 5000, "captura crazyhead-ventana.png");
     }
+
+    std::cout << "== Cargar archivos (buscador, arrastrar archivo y arrastrar texto) ==\n";
+    {
+        auto tmp = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("crazyhead-prueba carga \xc3\xb1");
+        tmp.createDirectory();
+        auto wav = tmp.getChildFile ("loop prueba.wav"), bad = tmp.getChildFile ("no-es-audio.wav"), txt = tmp.getChildFile ("nota.txt");
+        { auto buf = loop (2.0); std::unique_ptr<juce::FileOutputStream> os (wav.createOutputStream()); os->setPosition (0); os->truncate();
+          std::unique_ptr<juce::AudioFormatWriter> w (juce::WavAudioFormat().createWriterFor (os.get(), SR, 2, 24, {}, 0));
+          if (w) { os.release(); w->writeFromAudioSampleBuffer (buf, 0, buf.getNumSamples()); } }
+        bad.replaceWithText ("hola"); txt.replaceWithText ("hola");
+        CHECK (b.formatList().contains ("MP3"), "lee MP3 (" + b.formatList().toStdString() + ")");
+        CrazyHeadProcessor c; c.prepareToPlay (SR, 256);
+        std::unique_ptr<juce::AudioProcessorEditor> e0 (c.createEditor()); auto* ed = dynamic_cast<CrazyHeadEditor*> (e0.get());
+        CHECK (ed != nullptr, "ventana de CrazyHead");
+        ed->filesDropped ({ bad.getFullPathName() }, 10, 10);
+        CHECK (! c.hasAudio() && ed->loadMessage().isNotEmpty(), "archivo roto: mensaje que no se borra («" + ed->loadMessage().toStdString() + "»)");
+        ed->filesDropped ({ wav.getFullPathName() }, 10, 10);
+        CHECK (c.hasAudio() && ed->loadMessage().isEmpty() && c.sourceName == "loop prueba.wav", "arrastrar un WAV (ruta con espacios y \xc3\xb1)");
+        CrazyHeadProcessor d; d.prepareToPlay (SR, 256);
+        std::unique_ptr<juce::AudioProcessorEditor> e1 (d.createEditor()); auto* ed2 = dynamic_cast<CrazyHeadEditor*> (e1.get());
+        ed2->textDropped (juce::URL (wav).toString (false), 10, 10);
+        CHECK (d.hasAudio(), "arrastrar como URL file://");
+        CrazyHeadProcessor e; e.prepareToPlay (SR, 256);
+        std::unique_ptr<juce::AudioProcessorEditor> e2 (e.createEditor()); auto* ed3 = dynamic_cast<CrazyHeadEditor*> (e2.get());
+        ed3->textDropped ("\"" + wav.getFullPathName() + "\"\r\n", 10, 10);
+        CHECK (e.hasAudio(), "arrastrar como texto con la ruta entre comillas");
+        ed3->filesDropped ({ txt.getFullPathName() }, 10, 10);
+        CHECK (ed3->loadMessage().contains ("Formato"), "un .txt avisa de formato no admitido");
+        auto rep = ed3->writeReport ("prueba", "prueba");
+        CHECK (rep.existsAsFile() && rep.loadFileAsString().contains ("Formatos que sabe leer"), "informe .txt");
+        rep.deleteFile(); tmp.deleteRecursively();
+    }
     std::cout << (failures ? "\nFALLOS\n" : "\nTodo correcto\n");
     return failures ? 1 : 0;
 }

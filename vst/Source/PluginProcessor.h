@@ -6,7 +6,7 @@
 class CrazyHeadProcessor : public juce::AudioProcessor
 {
 public:
-    static constexpr const char* kVersion = "1.0.0";   // igual que VERSION en CMakeLists.txt
+    static constexpr const char* kVersion = "1.0.1";   // igual que VERSION en CMakeLists.txt
     static constexpr double kMaxSeconds = 60.0;        // máximo de audio que se guarda en el proyecto del DAW
 
     CrazyHeadProcessor();
@@ -46,6 +46,8 @@ public:
     const std::vector<float>& sourceRight() const { return srcR; }
     juce::String sourceName;
     juce::String notice;                                  // aviso para la ventana (p. ej. «recortado a 60 s»)
+    juce::String lastError;                               // por qué no se pudo cargar el último archivo (vacío si se cargó)
+    juce::String formatList() const;                      // formatos que sabe leer este plugin en este sistema
 
     double regionStart() const { return reg0; }
     double regionEnd() const { return reg1; }

@@ -150,16 +150,28 @@ bool CrazyHeadProcessor::loadBuffer (const juce::AudioBuffer<float>& b, double s
     return true;
 }
 
+juce::String CrazyHeadProcessor::formatList() const
+{
+    juce::AudioFormatManager fm; fm.registerBasicFormats(); juce::StringArray s;
+    for (int i = 0; i < fm.getNumKnownFormats(); ++i) s.add (fm.getKnownFormat (i)->getFormatName());
+    return s.joinIntoString (", ");
+}
+
 bool CrazyHeadProcessor::loadFile (const juce::File& f)
 {
+    lastError.clear();
+    auto fail = [this] (const juce::String& why) { lastError = why; return false; };
+    if (! f.existsAsFile()) return fail (juce::String (juce::CharPointer_UTF8 ("No existe el archivo (o es una carpeta)")));
     juce::AudioFormatManager fm; fm.registerBasicFormats();
     std::unique_ptr<juce::AudioFormatReader> rd (fm.createReaderFor (f));
-    if (! rd || rd->lengthInSamples < 64) return false;
+    if (! rd) return fail (juce::String (juce::CharPointer_UTF8 ("Formato no admitido (")) + f.getFileExtension() + juce::String (juce::CharPointer_UTF8 ("). Usa WAV, AIFF, FLAC, OGG o MP3")));
+    if (rd->lengthInSamples < 64) return fail (juce::String (juce::CharPointer_UTF8 ("El audio está vacío o es demasiado corto")));
     const int n = (int) std::min<juce::int64> (rd->lengthInSamples, (juce::int64) (kMaxSeconds * rd->sampleRate));
-    juce::AudioBuffer<float> b (std::max (1, (int) std::min<unsigned> (2u, rd->numChannels)), n);
-    if (! rd->read (&b, 0, n, 0, true, true)) return false;
-    if (rd->lengthInSamples > n) { loadBuffer (b, rd->sampleRate, f.getFileName()); notice = juce::String (juce::CharPointer_UTF8 ("Audio recortado a 60 s (m\xc3\xa1ximo del plugin).")); return true; }
-    return loadBuffer (b, rd->sampleRate, f.getFileName());
+    juce::AudioBuffer<float> b (2, n); b.clear();
+    if (! rd->read (&b, 0, n, 0, true, true)) return fail (juce::String (juce::CharPointer_UTF8 ("Error al leer el audio")));
+    if (! loadBuffer (b, rd->sampleRate, f.getFileName())) return fail (juce::String (juce::CharPointer_UTF8 ("Audio no válido (frecuencia ")) + juce::String (rd->sampleRate, 0) + " Hz)");
+    if (rd->lengthInSamples > n) notice = juce::String (juce::CharPointer_UTF8 ("Audio recortado a 60 s (m\xc3\xa1ximo del plugin)."));
+    return true;
 }
 
 void CrazyHeadProcessor::setRegion (double a, double b)
